@@ -1,11 +1,12 @@
 [package]
 name = "gma"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["diogo <diogo464@protonmail.com>"]
 edition = "2018"
 license = "MIT"
 description = "read and write .gma files, the format used by garrys mod's addons"
 repository = "https://github.com/diogo464/gma"
+readme="README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
