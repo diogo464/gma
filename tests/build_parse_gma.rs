@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use gma::{AddonType, GMABuilder, AddonTag};
+    use gma::{AddonTag, AddonType, GMABuilder};
     use std::io::Cursor;
 
     #[test]
@@ -51,6 +51,7 @@ mod test {
             .expect("Archive should countain one entry");
         assert_eq!(entry.filename(), ENTRY_NAME);
         assert_eq!(entry.size(), ENTRY_DATA.len() as u64);
+        assert_eq!(entry.crc(), 0907060870);
         archive
             .read_entry(entry, |_, reader| {
                 let mut entry_buffer = Vec::new();

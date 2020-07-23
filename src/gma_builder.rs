@@ -1,11 +1,12 @@
 use crate::binary::BinaryWriter;
 use crate::{addon_metadata::AddonMetadata, result::Result, AddonTag, AddonType, Error, IDENT};
+use crc::crc32;
 use std::io::{BufReader, Read, Seek, SeekFrom, Write};
 use std::{
     fs::File,
+    hash::Hasher,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-
 enum BuilderFileReader<'a> {
     FSFile(File),
     Bytes(&'a [u8]),
@@ -233,21 +234,23 @@ impl<'a> GMABuilder<'a> {
             const BLOCK_SIZE: usize = 8096;
             let mut bytes_written: usize = 0;
             let mut buffer: [u8; BLOCK_SIZE] = [0; BLOCK_SIZE];
+            let mut digest = crc32::Digest::new(crc32::IEEE);
             loop {
                 let read_result = reader.read(&mut buffer);
                 match read_result {
                     Ok(0) => {
-                        //TODO: add crc32
                         return Ok((
                             bytes_written,
                             FilePatchInfo {
                                 filesize: bytes_written as u64,
-                                crc: 0,
+                                crc: digest.finish() as u32,
                             },
                         ));
                     }
                     Ok(n) => {
-                        writer.write_all(&buffer[0..n])?;
+                        let data_slice = &buffer[0..n];
+                        digest.write(data_slice);
+                        writer.write_all(data_slice)?;
                         bytes_written += n;
                     }
                     Err(ref e) if e.kind() == std::io::ErrorKind::Interrupted => continue,

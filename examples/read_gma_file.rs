@@ -15,6 +15,7 @@ fn main() {
     for entry in archive.entries() {
         println!("{} :", entry.filename());
         println!("\tSize : {} bytes", entry.size());
+        println!("\tCRC32 : {:x}", entry.crc());
 
         //Only print the contents of lua files
         if entry.filename().ends_with(".lua") {
