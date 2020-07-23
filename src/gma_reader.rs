@@ -1,5 +1,5 @@
 use crate::{
-    addon_metadata::AddonMetadata, binary::BinaryReader, AddonType, GMAError, Result, AddonTag, IDENT,
+    addon_metadata::AddonMetadata, binary::BinaryReader, AddonTag, AddonType, Error, Result, IDENT,
     VALID_VERSIONS,
 };
 use std::{
@@ -201,7 +201,7 @@ where
         let mut ident: [u8; 4] = [0; 4];
         self.reader.read_exact(&mut ident)?;
         if ident != IDENT {
-            Err(GMAError::InvalidIdent)
+            Err(Error::InvalidIdent)
         } else {
             Ok(())
         }
@@ -210,7 +210,7 @@ where
     fn read_version(&mut self) -> Result<u8> {
         let version = self.reader.read_u8()?.1;
         if !VALID_VERSIONS.contains(&version) {
-            Err(GMAError::InvalidVersion(version))
+            Err(Error::InvalidVersion(version))
         } else {
             Ok(version)
         }

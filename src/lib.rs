@@ -8,8 +8,8 @@ mod gma_builder;
 mod gma_reader;
 mod result;
 
-pub use error::GMAError;
-pub use gma_builder::{BuilderError, GMABuilder};
+pub use error::Error;
+pub use gma_builder::GMABuilder;
 pub use gma_reader::{FileEntry, GMAFile};
 pub use result::Result;
 

@@ -2,6 +2,7 @@ use std::io::{BufRead, Write};
 
 #[derive(Debug)]
 pub enum Error {
+    InvalidCString,
     InvalidUTF8(std::string::FromUtf8Error),
     IOError(std::io::Error),
 }
@@ -89,6 +90,10 @@ where
 
     fn write_c_string(&mut self, val: &str) -> Result<usize> {
         let str_bytes = val.as_bytes();
+        if str_bytes.contains(&0) {
+            return Err(Error::InvalidCString);
+        }
+
         self.write_all(&str_bytes)?;
         //write null terminator
         self.write_all(&[0])?;

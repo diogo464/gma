@@ -1,33 +1,10 @@
-use crate::binary::{self, BinaryWriter};
-use crate::{addon_metadata::AddonMetadata, AddonType, AddonTag, IDENT};
+use crate::binary::BinaryWriter;
+use crate::{addon_metadata::AddonMetadata, result::Result, AddonTag, AddonType, Error, IDENT};
 use std::io::{BufReader, Read, Seek, SeekFrom, Write};
 use std::{
     fs::File,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-
-#[derive(Debug)]
-pub enum BuilderError {
-    InvalidASCII,
-    IOError(std::io::Error),
-}
-
-impl From<std::io::Error> for BuilderError {
-    fn from(e: std::io::Error) -> Self {
-        Self::IOError(e)
-    }
-}
-
-impl From<binary::Error> for BuilderError {
-    fn from(e: binary::Error) -> Self {
-        match e {
-            binary::Error::IOError(e) => Self::IOError(e),
-            binary::Error::InvalidUTF8(_) => Self::InvalidASCII,
-        }
-    }
-}
-
-pub type Result<T, E = BuilderError> = std::result::Result<T, E>;
 
 enum BuilderFileReader<'a> {
     FSFile(File),
@@ -274,7 +251,7 @@ impl<'a> GMABuilder<'a> {
                         bytes_written += n;
                     }
                     Err(ref e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
-                    Err(e) => return Err(BuilderError::IOError(e)),
+                    Err(e) => return Err(Error::IOError(e)),
                 }
             }
         };
