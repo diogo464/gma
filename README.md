@@ -1,4 +1,9 @@
 # GMA
+![Rust](https://github.com/diogo464/gma/workflows/Rust/badge.svg)
+[![Crates.io version](https://img.shields.io/crates/v/gma.svg)](https://crates.io/crates/gma)
+
+[Documentation](https://docs.rs/gma)
+
 A crate to read and write to .gma files.
 
 Reading/Writing compressed files is currently not supported.
