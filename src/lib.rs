@@ -48,6 +48,7 @@ pub enum Tag {
     Build,
 }
 
+/// Opens a file from disk with the given path and tries to read it as a gma archive
 pub fn open<P>(path: P) -> Result<GMAFile<BufReader<std::fs::File>>>
 where
     P: AsRef<Path>,
@@ -57,6 +58,7 @@ where
     load(reader)
 }
 
+/// Loads a gma file from a reader
 pub fn load<ReaderType>(r: ReaderType) -> Result<GMAFile<ReaderType>>
 where
     ReaderType: BufRead + Seek,
@@ -64,6 +66,7 @@ where
     GMAFileReader::new(r).read_gma()
 }
 
+/// Loads a gma file from memory
 pub fn load_from_memory(data: &[u8]) -> Result<GMAFile<Cursor<&[u8]>>> {
     GMAFileReader::new(Cursor::new(data)).read_gma()
 }

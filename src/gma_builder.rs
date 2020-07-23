@@ -58,6 +58,7 @@ pub struct GMABuilder<'a> {
 }
 
 impl<'a> GMABuilder<'a> {
+    /// Creates a new gma builder
     pub fn new() -> Self {
         Self {
             version: 3,
@@ -75,41 +76,50 @@ impl<'a> GMABuilder<'a> {
         }
     }
 
+    /// Sets the gma version of the archive. Default : 3
     pub fn version(mut self, version: u8) -> Self {
         self.version = version;
         self
     }
 
+    /// Sets the steamid of the author
     pub fn steamid(mut self, steamid: u64) -> Self {
         self.steamid = steamid;
         self
     }
 
+    /// Sets the timestamp. Default : current time
     pub fn timestamp(mut self, timestamp: u64) -> Self {
         self.timestamp = timestamp;
         self
     }
 
+    /// Sets the name of the addon
     pub fn name(mut self, name: &'a str) -> Self {
         self.name = name;
         self
     }
 
+    /// Sets the description of the addon
     pub fn description(mut self, description: &'a str) -> Self {
         self.description = description;
         self
     }
 
+    /// Sets the name of the author
     pub fn author(mut self, author: &'a str) -> Self {
         self.author = author;
         self
     }
 
+    /// Sets the addon type
     pub fn addon_type(mut self, addon_type: AddonType) -> Self {
         self.addon_type = addon_type;
         self
     }
 
+    /// Adds tag to the addon.
+    /// Only 2 tags are allowed at any given time, adding more will replace the oldest one
     pub fn addon_tag(mut self, addon_tag: Tag) -> Self {
         let (avail1, avail2) = (self.addon_tags[0].is_none(), self.addon_tags[1].is_none());
         match (avail1, avail2) {
@@ -123,6 +133,7 @@ impl<'a> GMABuilder<'a> {
         self
     }
 
+    /// Adds a file to the archive from the provided path
     pub fn file_from_path<S: Into<String>>(mut self, path: S) -> Self {
         let path = path.into();
         let file = File::open(&path).unwrap();
@@ -133,6 +144,7 @@ impl<'a> GMABuilder<'a> {
         self
     }
 
+    /// Adds a file with the given filename and contents
     pub fn file_from_bytes<S: Into<String>>(mut self, filename: S, bytes: &'a [u8]) -> Self {
         self.files.push(BuilderFile {
             filename: filename.into(),
@@ -141,6 +153,7 @@ impl<'a> GMABuilder<'a> {
         self
     }
 
+    /// Adds a file with the given filename and contents are read from `reader`
     pub fn file_from_reader<S: Into<String>>(
         mut self,
         filename: S,
@@ -153,6 +166,7 @@ impl<'a> GMABuilder<'a> {
         self
     }
 
+    /// Consumes the builder and writes the gma file contents to the given `writer`
     pub fn write_to<WriterType>(self, mut writer: WriterType) -> Result<()>
     where
         WriterType: Write + Seek,

@@ -16,15 +16,19 @@ pub struct FileEntry {
 }
 
 impl FileEntry {
+    /// The full filename of this entry. Ex : lua/autorun/cl_myscript.lua
     pub fn filename(&self) -> &str {
         &self.filename
     }
+    /// The file size
     pub fn size(&self) -> u64 {
         self.filesize
     }
+    /// The crc32 of this entry's contents
     pub fn crc(&self) -> u32 {
         self.crc
     }
+    /// The offset in the gma file, starting from the first file
     pub fn offset(&self) -> u64 {
         self.offset
     }
@@ -52,39 +56,66 @@ impl<ReaderType> GMAFile<ReaderType>
 where
     ReaderType: BufRead + Seek,
 {
+    /// Get the gma archive versiom
     pub fn version(&self) -> u8 {
         self.version
     }
+    /// The appid. This is always '4000', the appid of garry's mod
     pub fn appid(&self) -> u32 {
         4000 // this is the gmod appid
     }
+    /// The author's steamid. This is currently unused by the game and is usually hardcoded to 0
     pub fn author_steamid(&self) -> u64 {
         self.steamid
     }
+    /// The seconds since UNIX epoch from when the file was created
     pub fn timestamp(&self) -> u64 {
         self.timestamp
     }
+    /// The name of the addon
     pub fn name(&self) -> &str {
         &self.name
     }
+    /// The description of the addon
     pub fn description(&self) -> &str {
         &self.description
     }
+    /// The type of the addon
     pub fn addon_type(&self) -> Option<AddonType> {
         self.addon_type
     }
+    /// The tags of the item. This should be at most 2 but this implementation supports reading more
     pub fn addon_tags(&self) -> &[Tag] {
         &self.addon_tags
     }
+    /// Helper function to check if this addon contains a certain tag
     pub fn contains_tag(&self, tag: Tag) -> bool {
         self.addon_tags.contains(&tag)
     }
+    /// The name of the addon's author
     pub fn author(&self) -> &str {
         &self.author
     }
+    /// An iterator of the file entries of this archive
     pub fn entries(&self) -> impl Iterator<Item = &FileEntry> {
         self.entries.iter()
     }
+    /// Function to read the contents of a given entry.
+    ///
+    /// The callback function takes as parameter a reference to the entry and a mutable
+    /// reference to a type that implements Read.
+    /// ```
+    /// use std::io::Read;
+    /// # let dummy_buffer = &include_bytes!("../tests/addon.gma")[..];
+    /// let archive = gma::load_from_memory(&dummy_buffer).unwrap();
+    /// for entry in archive.entries() {
+    ///     let contents = archive.read_entry(entry, |entry_ref, reader|{
+    ///         let mut c = String::new();
+    ///         reader.read_to_string(&mut c).unwrap();
+    ///         c
+    ///     }).unwrap();
+    ///     // do something with contents
+    /// }
     pub fn read_entry<F, R>(&self, entry: &FileEntry, func: F) -> Result<R>
     where
         F: FnOnce(&FileEntry, &mut dyn Read) -> R,
