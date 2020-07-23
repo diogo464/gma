@@ -1,0 +1,14 @@
+{
+	"description": "My Description",
+	"title": "My Test Addon",
+	"type": "gamemode",
+	"tags": [
+		"fun",
+		"cartoon"
+	],
+	"ignore": [
+		"*.psd",
+		"*.vcproj",
+		"*.svn*"
+	]
+}
