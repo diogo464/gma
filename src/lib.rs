@@ -1,3 +1,6 @@
+//! Crate for reading and writing gma files, the file format of garrys mod's addons.
+//! This crate currently does not support opening compressed archives.
+
 mod addon_metadata;
 mod binary;
 mod error;
