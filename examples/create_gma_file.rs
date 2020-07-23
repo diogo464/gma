@@ -1,4 +1,4 @@
-use gma::{AddonType, GMABuilder, Tag};
+use gma::{AddonType, GMABuilder, AddonTag};
 use std::{fs::File, io::BufWriter};
 
 fn main() {
@@ -9,8 +9,8 @@ fn main() {
     const DESC: &str = "ADDON_DESC";
     const AUTHOR: &str = "AUTHOR_NAME";
     const TYPE: AddonType = AddonType::Model;
-    const TAG1: Tag = Tag::Build;
-    const TAG2: Tag = Tag::Fun;
+    const TAG1: AddonTag = AddonTag::Build;
+    const TAG2: AddonTag = AddonTag::Fun;
 
     let file = File::create("myaddon.gma").unwrap();
     let mut writer = BufWriter::new(file);

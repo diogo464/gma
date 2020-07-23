@@ -1,5 +1,5 @@
 use crate::{
-    addon_metadata::AddonMetadata, binary::BinaryReader, AddonType, GMAError, Result, Tag, IDENT,
+    addon_metadata::AddonMetadata, binary::BinaryReader, AddonType, GMAError, Result, AddonTag, IDENT,
     VALID_VERSIONS,
 };
 use std::{
@@ -45,7 +45,7 @@ where
     name: String,
     description: String,
     addon_type: Option<AddonType>,
-    addon_tags: Vec<Tag>,
+    addon_tags: Vec<AddonTag>,
     author: String,
     entries: Vec<FileEntry>,
     file_data_start: u64,
@@ -85,11 +85,11 @@ where
         self.addon_type
     }
     /// The tags of the item. This should be at most 2 but this implementation supports reading more
-    pub fn addon_tags(&self) -> &[Tag] {
+    pub fn addon_tags(&self) -> &[AddonTag] {
         &self.addon_tags
     }
     /// Helper function to check if this addon contains a certain tag
-    pub fn contains_tag(&self, tag: Tag) -> bool {
+    pub fn contains_tag(&self, tag: AddonTag) -> bool {
         self.addon_tags.contains(&tag)
     }
     /// The name of the addon's author

@@ -1,5 +1,5 @@
 use crate::binary::{self, BinaryWriter};
-use crate::{addon_metadata::AddonMetadata, AddonType, Tag, IDENT};
+use crate::{addon_metadata::AddonMetadata, AddonType, AddonTag, IDENT};
 use std::io::{BufReader, Read, Seek, SeekFrom, Write};
 use std::{
     fs::File,
@@ -54,7 +54,7 @@ pub struct GMABuilder<'a> {
     author: &'a str,
     files: Vec<BuilderFile<'a>>,
     addon_type: AddonType,
-    addon_tags: [Option<Tag>; 2],
+    addon_tags: [Option<AddonTag>; 2],
 }
 
 impl<'a> GMABuilder<'a> {
@@ -120,7 +120,7 @@ impl<'a> GMABuilder<'a> {
 
     /// Adds tag to the addon.
     /// Only 2 tags are allowed at any given time, adding more will replace the oldest one
-    pub fn addon_tag(mut self, addon_tag: Tag) -> Self {
+    pub fn addon_tag(mut self, addon_tag: AddonTag) -> Self {
         let (avail1, avail2) = (self.addon_tags[0].is_none(), self.addon_tags[1].is_none());
         match (avail1, avail2) {
             (false, false) | (true, true) => {
@@ -184,7 +184,7 @@ impl<'a> GMABuilder<'a> {
         //write addon name
         writer.write_c_string(self.name)?;
         //write metadata string
-        let tags: Vec<Tag> = self
+        let tags: Vec<AddonTag> = self
             .addon_tags
             .iter()
             .filter(|p| p.is_some())

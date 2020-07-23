@@ -36,7 +36,7 @@ pub enum AddonType {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Tag {
+pub enum AddonTag {
     Fun,
     Roleplay,
     Scenic,

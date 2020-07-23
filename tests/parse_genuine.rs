@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use gma::{AddonType, Tag};
+    use gma::{AddonType, AddonTag};
 
     #[test]
     fn parse_genuine_gma() {
@@ -14,8 +14,8 @@ mod tests {
         assert_eq!(archive.name(), "My Test Addon");
         assert_eq!(archive.description(), "My Description");
         assert_eq!(archive.addon_type().unwrap(), AddonType::Gamemode);
-        assert!(archive.contains_tag(Tag::Fun));
-        assert!(archive.contains_tag(Tag::Cartoon));
+        assert!(archive.contains_tag(AddonTag::Fun));
+        assert!(archive.contains_tag(AddonTag::Cartoon));
         //this fields isnt currently used and is hardcoded to this
         assert_eq!(archive.author(), "Author Name");
 
