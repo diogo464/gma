@@ -1,4 +1,4 @@
-use gma::{AddonType, GMABuilder, AddonTag};
+use gma::{AddonTag, AddonType, GMABuilder};
 use std::{fs::File, io::BufWriter};
 
 fn main() {

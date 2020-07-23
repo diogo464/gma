@@ -1,5 +1,4 @@
-use crate::AddonType;
-use crate::AddonTag;
+use crate::{AddonTag, AddonType};
 use nanoserde::{self, DeJson, SerJson};
 
 #[derive(Debug, SerJson, DeJson)]
@@ -65,7 +64,7 @@ impl AddonMetadata {
         (opt_t1.unwrap_or(None), opt_t2.unwrap_or(None))
     }
 
-    fn string_to_type(string: &String) -> Option<AddonType> {
+    fn string_to_type(string: &str) -> Option<AddonType> {
         let lowcase = string.to_lowercase();
         match lowcase.as_str() {
             "gamemode" => Some(AddonType::Gamemode),
@@ -98,7 +97,7 @@ impl AddonMetadata {
         .to_owned()
     }
 
-    fn string_to_tag(string: &String) -> Option<AddonTag> {
+    fn string_to_tag(string: &str) -> Option<AddonTag> {
         match string.to_lowercase().as_str() {
             "fun" => Some(AddonTag::Fun),
             "roleplay" => Some(AddonTag::Roleplay),

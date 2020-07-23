@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use gma::{AddonType, AddonTag};
+    use gma::{AddonTag, AddonType};
 
     #[test]
     fn parse_genuine_gma() {

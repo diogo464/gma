@@ -43,7 +43,7 @@ impl<'a> GMABuilder<'a> {
             steamid: 0,
             timestamp: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
-                .unwrap_or(Duration::new(0, 0))
+                .unwrap_or_else(|_| Duration::new(0, 0))
                 .as_secs() as u64,
             name: "GMABuilder addon name",
             description: "A description",

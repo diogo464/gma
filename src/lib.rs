@@ -21,7 +21,7 @@ use std::{
     path::Path,
 };
 
-const IDENT: [u8; 4] = ['G' as u8, 'M' as u8, 'A' as u8, 'D' as u8];
+const IDENT: [u8; 4] = [b'G', b'M', b'A', b'D'];
 const VALID_VERSIONS: [u8; 3] = [1, 2, 3];
 
 #[derive(Debug, Clone, Copy, PartialEq)]

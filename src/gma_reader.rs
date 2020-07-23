@@ -229,7 +229,7 @@ where
         while {
             let string = self.reader.read_c_string()?.1;
             v.push(string);
-            v.last().unwrap().len() != 0
+            !v.last().unwrap().is_empty()
         } {}
         Ok(v)
     }
