@@ -26,6 +26,7 @@ fn main() {
         .addon_tag(TAG2)
         .author(AUTHOR)
         .file_from_bytes("file1", b"hello")
+        .compression(true)
         .write_to(&mut writer)
         .unwrap();
 }

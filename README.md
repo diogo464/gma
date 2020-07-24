@@ -6,7 +6,9 @@
 
 A crate to read and write to .gma files.
 
-Reading/Writing compressed files is currently not supported.
+Reading/Writing lzma compressed files is supported.
+Garry's mod cant read compressed gma files but some when downloaded directly from the steam workshop some files are lzma compressed.
+
 ## Reading a .gma file
 ```rust
     let archive = gma::open("myfile.gma").unwrap();
@@ -18,6 +20,7 @@ Reading/Writing compressed files is currently not supported.
     println!("Addon Type : {:?}", archive.addon_type());
     println!("Addon Type : {:?}", archive.addon_tags());
     println!("Author name : {}", archive.author());
+    println!("Compressed : {}", archive.compressed());
     println!();
 
     for entry in archive.entries() {

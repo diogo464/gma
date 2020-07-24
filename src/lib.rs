@@ -66,10 +66,10 @@ pub fn load<ReaderType>(r: ReaderType) -> Result<GMAFile<ReaderType>>
 where
     ReaderType: BufRead + Seek,
 {
-    GMAFileReader::new(r).read_gma()
+    GMAFileReader::new(r)?.read_gma()
 }
 
 /// Loads a gma file from memory
 pub fn load_from_memory(data: &[u8]) -> Result<GMAFile<Cursor<&[u8]>>> {
-    GMAFileReader::new(Cursor::new(data)).read_gma()
+    load(Cursor::new(data))
 }
