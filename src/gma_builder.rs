@@ -1,12 +1,13 @@
 use crate::binary::BinaryWriter;
 use crate::{addon_metadata::AddonMetadata, result::Result, AddonTag, AddonType, Error, IDENT};
 use crc::crc32;
-use std::io::{BufReader, Read, Seek, SeekFrom, Write};
+use std::io::{BufReader, Cursor, Read, Seek, SeekFrom, Write};
 use std::{
     fs::File,
     hash::Hasher,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
+
 enum BuilderFileReader<'a> {
     FSFile(File),
     Bytes(&'a [u8]),
@@ -33,6 +34,7 @@ pub struct GMABuilder<'a> {
     files: Vec<BuilderFile<'a>>,
     addon_type: AddonType,
     addon_tags: [Option<AddonTag>; 2],
+    compression: bool,
 }
 
 impl<'a> GMABuilder<'a> {
@@ -51,6 +53,7 @@ impl<'a> GMABuilder<'a> {
             files: Vec::new(),
             addon_type: AddonType::Tool,
             addon_tags: [None; 2],
+            compression: false,
         }
     }
 
@@ -87,6 +90,12 @@ impl<'a> GMABuilder<'a> {
     /// Sets the name of the author
     pub fn author(mut self, author: &'a str) -> Self {
         self.author = author;
+        self
+    }
+
+    /// Enables or disables lzma compression.
+    pub fn compression(mut self, c: bool) -> Self {
+        self.compression = c;
         self
     }
 
@@ -149,6 +158,20 @@ impl<'a> GMABuilder<'a> {
     where
         WriterType: Write + Seek,
     {
+        match self.compression {
+            true => {
+                let buffer = Vec::with_capacity(1024 * 1024 * 32);
+                let mut bufwriter = Cursor::new(buffer);
+                Self::write_to_gen(self, &mut bufwriter)?;
+                bufwriter.seek(SeekFrom::Start(0))?;
+                lzma_rs::lzma_compress(&mut bufwriter, &mut writer).unwrap();
+                Ok(())
+            }
+            false => Self::write_to_gen(self, writer),
+        }
+    }
+
+    fn write_to_gen<WriterType: Write + Seek>(self, mut writer: WriterType) -> Result<()> {
         Self::write_ident(&mut writer)?;
         //write version
         writer.write_u8(self.version)?;

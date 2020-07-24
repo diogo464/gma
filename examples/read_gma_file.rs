@@ -1,7 +1,7 @@
 /// This example shows how to read a gma file and print out some information about it
 use gma;
 fn main() {
-    let archive = gma::open("myfile.gma").unwrap();
+    let archive = gma::open("myaddon.gma").unwrap();
     println!("Version : {}", archive.version());
     println!("Author steam id : {}", archive.author_steamid());
     println!("Timestamp : {}", archive.timestamp());
@@ -10,6 +10,7 @@ fn main() {
     println!("Addon Type : {:?}", archive.addon_type());
     println!("Addon Type : {:?}", archive.addon_tags());
     println!("Author name : {}", archive.author());
+    println!("Compressed : {}", archive.compressed());
     println!();
 
     for entry in archive.entries() {

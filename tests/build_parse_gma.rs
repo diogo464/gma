@@ -29,6 +29,7 @@ mod test {
             .addon_tag(TAG1)
             .addon_tag(TAG2)
             .author(AUTHOR)
+            .compression(true)
             .file_from_bytes(ENTRY_NAME, ENTRY_DATA)
             .write_to(Cursor::new(&mut buffer))
             .unwrap();
