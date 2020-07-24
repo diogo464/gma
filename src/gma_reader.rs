@@ -2,9 +2,10 @@ use crate::{
     addon_metadata::AddonMetadata, binary::BinaryReader, AddonTag, AddonType, Error, Result, IDENT,
     VALID_VERSIONS,
 };
+use lzma_rs;
 use std::{
     cell::RefCell,
-    io::{BufRead, Read, Seek, SeekFrom},
+    io::{BufRead, Cursor, Read, Seek, SeekFrom},
 };
 
 #[derive(Debug)]
@@ -35,6 +36,54 @@ impl FileEntry {
 }
 
 #[derive(Debug)]
+enum StreamType<R>
+where
+    R: BufRead + Seek,
+{
+    Compressed((R, Cursor<Vec<u8>>)),
+    Uncompressed(R),
+}
+impl<R> Read for StreamType<R>
+where
+    R: Seek + BufRead,
+{
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        match self {
+            Self::Compressed((_, r)) => r.read(buf),
+            Self::Uncompressed(r) => r.read(buf),
+        }
+    }
+}
+impl<R> BufRead for StreamType<R>
+where
+    R: BufRead + Seek,
+{
+    fn fill_buf(&mut self) -> std::io::Result<&[u8]> {
+        match self {
+            Self::Compressed((_, r)) => r.fill_buf(),
+            Self::Uncompressed(r) => r.fill_buf(),
+        }
+    }
+    fn consume(&mut self, amt: usize) {
+        match self {
+            Self::Compressed((_, r)) => r.consume(amt),
+            Self::Uncompressed(r) => r.consume(amt),
+        }
+    }
+}
+impl<R> Seek for StreamType<R>
+where
+    R: Seek + BufRead,
+{
+    fn seek(&mut self, pos: SeekFrom) -> std::io::Result<u64> {
+        match self {
+            Self::Compressed((_, r)) => r.seek(pos),
+            Self::Uncompressed(r) => r.seek(pos),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct GMAFile<ReaderType>
 where
     ReaderType: BufRead + Seek,
@@ -49,7 +98,7 @@ where
     author: String,
     entries: Vec<FileEntry>,
     file_data_start: u64,
-    reader: RefCell<Option<ReaderType>>,
+    reader: RefCell<Option<StreamType<ReaderType>>>,
 }
 
 impl<ReaderType> GMAFile<ReaderType>
@@ -96,6 +145,18 @@ where
     pub fn author(&self) -> &str {
         &self.author
     }
+    /// Returns true if the input file was compressed, false otherwise
+    pub fn compressed(&self) -> bool {
+        match self
+            .reader
+            .borrow()
+            .as_ref()
+            .expect("The reader should not be None, this is a bug")
+        {
+            StreamType::Compressed(_) => true,
+            StreamType::Uncompressed(_) => false,
+        }
+    }
     /// An iterator of the file entries of this archive
     pub fn entries(&self) -> impl Iterator<Item = &FileEntry> {
         self.entries.iter()
@@ -121,13 +182,14 @@ where
         F: FnOnce(&FileEntry, &mut dyn Read) -> R,
     {
         //this doesnt look good
-        let mut reader = self.reader.replace(None).unwrap();
-        reader.seek(std::io::SeekFrom::Start(
+        let mut stream = self.reader.replace(None).unwrap();
+        //TODO: if there is a problem with seek we lose the reader
+        stream.seek(std::io::SeekFrom::Start(
             self.file_data_start + entry.offset,
         ))?;
-        let mut entry_reader = (&mut reader).take(entry.filesize);
+        let mut entry_reader = (&mut stream).take(entry.filesize);
         let result = func(entry, &mut entry_reader);
-        self.reader.replace(Some(reader));
+        self.reader.replace(Some(stream));
         Ok(result)
     }
 }
@@ -136,15 +198,17 @@ pub struct GMAFileReader<ReaderType>
 where
     ReaderType: BufRead + Seek,
 {
-    reader: ReaderType,
+    reader: StreamType<ReaderType>,
 }
 
 impl<ReaderType> GMAFileReader<ReaderType>
 where
     ReaderType: BufRead + Seek,
 {
-    pub fn new(reader: ReaderType) -> Self {
-        Self { reader }
+    pub fn new(reader: ReaderType) -> Result<Self> {
+        Ok(Self {
+            reader: get_reader_stream(reader)?,
+        })
     }
 
     pub fn read_gma(mut self) -> Result<GMAFile<ReaderType>> {
@@ -267,5 +331,28 @@ where
             })
         }
         Ok(entries)
+    }
+}
+
+// Returns a decompression stream if the provided stream is lzma compressed,
+// otherwise returns the provided stream
+fn get_reader_stream<ReaderType>(mut reader: ReaderType) -> Result<StreamType<ReaderType>>
+where
+    ReaderType: BufRead + Seek,
+{
+    let mut probe_buffer: [u8; 4] = [0; 4];
+    let stream_start_pos = reader.seek(SeekFrom::Current(0))?;
+    reader.read_exact(&mut probe_buffer)?;
+    reader.seek(SeekFrom::Start(stream_start_pos))?;
+    match probe_buffer {
+        IDENT => Ok(StreamType::Uncompressed(reader)),
+        //Error decompressing, we assume this is not a lzma file
+        _ => {
+            let file_buffer = Vec::new();
+            let mut buffer_cursor = Cursor::new(file_buffer);
+            lzma_rs::lzma_decompress(&mut reader, &mut buffer_cursor).unwrap();
+            buffer_cursor.seek(SeekFrom::Start(0))?;
+            Ok(StreamType::Compressed((reader, buffer_cursor)))
+        }
     }
 }
