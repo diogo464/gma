@@ -39,9 +39,9 @@ pub struct GMABuilder<'a> {
     version: Option<u8>,
     steamid: Option<u64>,
     timestamp: Option<u64>,
-    name: Option<&'a str>,
-    description: Option<&'a str>,
-    author: Option<&'a str>,
+    name: Option<String>,
+    description: Option<String>,
+    author: Option<String>,
     files: Vec<BuilderFile<'a>>,
     addon_type: AddonType,
     addon_tags: [Option<AddonTag>; 2],
@@ -61,8 +61,8 @@ impl<'a> GMABuilder<'a> {
             steamid: Some(DEFAULT_STEAMID),
             timestamp: Some(current_timestamp),
             name: None,
-            description: Some(DEFAULT_DESCRIPTION),
-            author: Some(DEFAULT_AUTHOR),
+            description: Some(DEFAULT_DESCRIPTION.to_owned()),
+            author: Some(DEFAULT_AUTHOR.to_owned()),
             files: Vec::new(),
             addon_type: AddonType::Tool,
             addon_tags: [None; 2],
@@ -89,20 +89,20 @@ impl<'a> GMABuilder<'a> {
     }
 
     /// Sets the name of the addon. Required
-    pub fn name(&mut self, name: &'a str) -> &mut Self {
-        self.name = Some(name);
+    pub fn name<S: Into<String>>(&mut self, name: S) -> &mut Self {
+        self.name = Some(name.into());
         self
     }
 
     /// Sets the description of the addon. Default : ''
-    pub fn description(&mut self, description: &'a str) -> &mut Self {
-        self.description = Some(description);
+    pub fn description<S: Into<String>>(&mut self, description: S) -> &mut Self {
+        self.description = Some(description.into());
         self
     }
 
     /// Sets the name of the author. Default : 'unknown'
-    pub fn author(&mut self, author: &'a str) -> &mut Self {
-        self.author = Some(author);
+    pub fn author<S: Into<String>>(&mut self, author: S) -> &mut Self {
+        self.author = Some(author.into());
         self
     }
 
@@ -236,7 +236,7 @@ impl<'a> GMABuilder<'a> {
         let metadata_json = metadata.to_json();
         writer.write_c_string(&metadata_json)?;
         //write author name
-        writer.write_c_string(self.author.unwrap())?;
+        writer.write_c_string(&self.author.unwrap())?;
         //write addon_version
         //this is currently unused and should be set to 1
         writer.write_u32(1)?;
