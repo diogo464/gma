@@ -56,7 +56,9 @@ Garry's mod cant read compressed gma files but some when downloaded directly fro
     let file = File::create("myaddon.gma").unwrap();
     let mut writer = BufWriter::new(file);
 
-    GMABuilder::new()
+    let mut builder = GMABuilder::new();
+
+    builder
         .version(VERSION)
         .steamid(STEAMID)
         .timestamp(TIMESTAMP)
@@ -67,6 +69,7 @@ Garry's mod cant read compressed gma files but some when downloaded directly fro
         .addon_tag(TAG2)
         .author(AUTHOR)
         .file_from_bytes("file1", b"hello")
-        .write_to(&mut writer)
-        .unwrap();
+        .compression(true);
+
+    builder.write_to(&mut writer).unwrap();
 ```
