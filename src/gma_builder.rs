@@ -229,7 +229,7 @@ impl<'a> GMABuilder<'a> {
             .collect();
         let metadata = AddonMetadata::new(
             name.to_owned(),
-            self.description.unwrap().to_owned(),
+            self.description.unwrap(),
             &self.addon_type,
             &tags,
         );
