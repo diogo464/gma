@@ -13,6 +13,8 @@ pub enum Error {
     /// As of writting this only version 1,2 and 3 of the file format are supported
     InvalidVersion(u8),
     CompressionError(lzma_rs::error::Error),
+    InvalidAddonType(String),
+    InvalidAddonTag(String),
 }
 
 impl From<std::io::Error> for Error {
@@ -46,6 +48,8 @@ impl Display for Error {
             Self::InvalidIdent => write!(f, "The gma file did not containt a valid ident, 'GMAD' was expect at the start of the file"),
             Self::InvalidVersion(v) => write!(f, "An invalid version of gma file was found : '{}', this might be cause by a corrupt file", v),
             Self::CompressionError(e) => write!(f, "Error while compressing/decompressing. {:?}", e),
+            Self::InvalidAddonType(s) => write!(f, "The addon type '{}' is invalid.", s),
+            Self::InvalidAddonTag(s) => write!(f, "The addon tag '{}' is invalid.", s),
         }
     }
 }

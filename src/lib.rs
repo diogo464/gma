@@ -12,6 +12,7 @@ pub use error::Error;
 pub use gma_builder::GMABuilder;
 pub use gma_reader::{FileEntry, GMAFile};
 pub use result::Result;
+use std::convert::TryFrom;
 
 use gma_reader::GMAFileReader;
 
@@ -38,6 +39,27 @@ pub enum AddonType {
     ServerContent,
 }
 
+impl TryFrom<&str> for AddonType {
+    type Error = Error;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let value_lower = value.to_lowercase();
+        match value_lower.as_str() {
+            "gamemode" => Ok(AddonType::Gamemode),
+            "map" => Ok(AddonType::Map),
+            "weapon" => Ok(AddonType::Weapon),
+            "vehicle" => Ok(AddonType::Vehicle),
+            "npc" => Ok(AddonType::NPC),
+            "entity" => Ok(AddonType::Entity),
+            "tool" => Ok(AddonType::Tool),
+            "effects" => Ok(AddonType::Effects),
+            "model" => Ok(AddonType::Model),
+            "servercontent" => Ok(AddonType::ServerContent),
+            _ => Err(Self::Error::InvalidAddonType(value_lower)),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum AddonTag {
     Fun,
@@ -49,6 +71,26 @@ pub enum AddonTag {
     Water,
     Comic,
     Build,
+}
+
+impl TryFrom<&str> for AddonTag {
+    type Error = Error;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let value_lower = value.to_lowercase();
+        match value_lower.as_str() {
+            "fun" => Ok(AddonTag::Fun),
+            "roleplay" => Ok(AddonTag::Roleplay),
+            "scenic" => Ok(AddonTag::Scenic),
+            "movie" => Ok(AddonTag::Movie),
+            "realism" => Ok(AddonTag::Realism),
+            "cartoon" => Ok(AddonTag::Cartoon),
+            "water" => Ok(AddonTag::Water),
+            "comic" => Ok(AddonTag::Comic),
+            "build" => Ok(AddonTag::Build),
+            _ => Err(Self::Error::InvalidAddonTag(value_lower)),
+        }
+    }
 }
 
 /// Opens a file from disk with the given path and tries to read it as a gma archive
