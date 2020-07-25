@@ -8,6 +8,7 @@ use std::{
     io::{BufRead, Cursor, Read, Seek, SeekFrom},
 };
 
+/// GMA File Entry
 #[derive(Debug)]
 pub struct FileEntry {
     filename: String,
@@ -83,6 +84,7 @@ where
     }
 }
 
+/// GMA File
 #[derive(Debug)]
 pub struct GMAFile<ReaderType>
 where

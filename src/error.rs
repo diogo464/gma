@@ -5,9 +5,12 @@ use std::fmt::Display;
 #[derive(Debug)]
 pub enum Error {
     IOError(std::io::Error),
-    InvalidString, // this is likely due to trying to write a string containing a null byte
+    /// this is likely due to trying to write a string containing a null byte
+    InvalidString,
     UTF8Error(std::string::FromUtf8Error),
+    /// The byte sequence 'GMAD' is expected at the start of every .gma file
     InvalidIdent,
+    /// As of writting this only version 1,2 and 3 of the file format are supported
     InvalidVersion(u8),
     CompressionError(lzma_rs::error::Error),
 }
