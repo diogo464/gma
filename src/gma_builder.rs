@@ -5,13 +5,21 @@ use std::io::{BufReader, Cursor, Read, Seek, SeekFrom, Write};
 use std::{
     fs::File,
     hash::Hasher,
+    path::Path,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
+//Defaults
+const DEFAULT_VERSION: u8 = 3;
+const DEFAULT_STEAMID: u64 = 0;
+const DEFAULT_DESCRIPTION: &str = "";
+const DEFAULT_AUTHOR: &str = "unknown";
+const DEFAULT_COMPRESSION: bool = false;
+
 enum BuilderFileReader<'a> {
-    FSFile(File),
+    FSFile(BufReader<File>),
     Bytes(&'a [u8]),
-    Reader(&'a mut dyn Read),
+    Reader(Box<dyn Read>),
 }
 
 struct BuilderFile<'a> {
@@ -24,90 +32,99 @@ struct FilePatchInfo {
     crc: u32,
 }
 
+/// GMA File Builder.
+///
+/// The only required fields are 'name' and 'addon_tag'
 pub struct GMABuilder<'a> {
-    version: u8,
-    steamid: u64,
-    timestamp: u64,
-    name: &'a str,
-    description: &'a str,
-    author: &'a str,
+    version: Option<u8>,
+    steamid: Option<u64>,
+    timestamp: Option<u64>,
+    name: Option<&'a str>,
+    description: Option<&'a str>,
+    author: Option<&'a str>,
     files: Vec<BuilderFile<'a>>,
     addon_type: AddonType,
     addon_tags: [Option<AddonTag>; 2],
-    compression: bool,
+    compression: Option<bool>,
 }
 
 impl<'a> GMABuilder<'a> {
     /// Creates a new gma builder
     pub fn new() -> Self {
+        let current_timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_else(|_| Duration::new(0, 0))
+            .as_secs() as u64;
+
         Self {
-            version: 3,
-            steamid: 0,
-            timestamp: SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap_or_else(|_| Duration::new(0, 0))
-                .as_secs() as u64,
-            name: "GMABuilder addon name",
-            description: "A description",
-            author: "GMABuilder",
+            version: Some(DEFAULT_VERSION),
+            steamid: Some(DEFAULT_STEAMID),
+            timestamp: Some(current_timestamp),
+            name: None,
+            description: Some(DEFAULT_DESCRIPTION),
+            author: Some(DEFAULT_AUTHOR),
             files: Vec::new(),
             addon_type: AddonType::Tool,
             addon_tags: [None; 2],
-            compression: false,
+            compression: Some(DEFAULT_COMPRESSION),
         }
     }
 
     /// Sets the gma version of the archive. Default : 3
-    pub fn version(mut self, version: u8) -> Self {
-        self.version = version;
+    pub fn version(&mut self, version: u8) -> &mut Self {
+        self.version = Some(version);
         self
     }
 
-    /// Sets the steamid of the author
-    pub fn steamid(mut self, steamid: u64) -> Self {
-        self.steamid = steamid;
+    /// Sets the steamid of the author. Default : 0
+    pub fn steamid(&mut self, steamid: u64) -> &mut Self {
+        self.steamid = Some(steamid);
         self
     }
 
     /// Sets the timestamp. Default : current time
-    pub fn timestamp(mut self, timestamp: u64) -> Self {
-        self.timestamp = timestamp;
+    pub fn timestamp(&mut self, timestamp: u64) -> &mut Self {
+        self.timestamp = Some(timestamp);
         self
     }
 
-    /// Sets the name of the addon
-    pub fn name(mut self, name: &'a str) -> Self {
-        self.name = name;
+    /// Sets the name of the addon. Required
+    pub fn name(&mut self, name: &'a str) -> &mut Self {
+        self.name = Some(name);
         self
     }
 
-    /// Sets the description of the addon
-    pub fn description(mut self, description: &'a str) -> Self {
-        self.description = description;
+    /// Sets the description of the addon. Default : ''
+    pub fn description(&mut self, description: &'a str) -> &mut Self {
+        self.description = Some(description);
         self
     }
 
-    /// Sets the name of the author
-    pub fn author(mut self, author: &'a str) -> Self {
-        self.author = author;
+    /// Sets the name of the author. Default : 'unknown'
+    pub fn author(&mut self, author: &'a str) -> &mut Self {
+        self.author = Some(author);
         self
     }
 
-    /// Enables or disables lzma compression.
-    pub fn compression(mut self, c: bool) -> Self {
-        self.compression = c;
+    /// Enables or disables lzma compression. Default : false
+    ///
+    /// Garry's mod doesnt open compressed gma files.
+    /// Support for compressed files is mostly here to interact with files downloaded straight
+    /// from the steamworkshop that could be compressed
+    pub fn compression(&mut self, c: bool) -> &mut Self {
+        self.compression = Some(c);
         self
     }
 
-    /// Sets the addon type
-    pub fn addon_type(mut self, addon_type: AddonType) -> Self {
+    /// Sets the addon type. Required
+    pub fn addon_type(&mut self, addon_type: AddonType) -> &mut Self {
         self.addon_type = addon_type;
         self
     }
 
     /// Adds tag to the addon.
     /// Only 2 tags are allowed at any given time, adding more will replace the oldest one
-    pub fn addon_tag(mut self, addon_tag: AddonTag) -> Self {
+    pub fn addon_tag(&mut self, addon_tag: AddonTag) -> &mut Self {
         let (avail1, avail2) = (self.addon_tags[0].is_none(), self.addon_tags[1].is_none());
         match (avail1, avail2) {
             (false, false) | (true, true) => {
@@ -121,18 +138,33 @@ impl<'a> GMABuilder<'a> {
     }
 
     /// Adds a file to the archive from the provided path
-    pub fn file_from_path<S: Into<String>>(mut self, path: S) -> Self {
-        let path = path.into();
-        let file = File::open(&path).unwrap();
+    pub fn file_from_path<S: AsRef<Path>>(
+        &mut self,
+        path: S,
+    ) -> std::result::Result<&mut Self, std::io::Error> {
+        let file = File::open(&path)?;
         self.files.push(BuilderFile {
-            filename: path,
-            reader: BuilderFileReader::FSFile(file),
+            filename: path.as_ref().to_string_lossy().as_ref().to_owned(),
+            reader: BuilderFileReader::FSFile(BufReader::new(file)),
         });
-        self
+        Ok(self)
+    }
+
+    pub fn file_with_name<P: AsRef<Path>, N: Into<String>>(
+        &mut self,
+        path: P,
+        name: N,
+    ) -> std::result::Result<&mut Self, std::io::Error> {
+        let file = File::open(&path)?;
+        self.files.push(BuilderFile {
+            filename: name.into(),
+            reader: BuilderFileReader::FSFile(BufReader::new(file)),
+        });
+        Ok(self)
     }
 
     /// Adds a file with the given filename and contents
-    pub fn file_from_bytes<S: Into<String>>(mut self, filename: S, bytes: &'a [u8]) -> Self {
+    pub fn file_from_bytes<S: Into<String>>(&mut self, filename: S, bytes: &'a [u8]) -> &mut Self {
         self.files.push(BuilderFile {
             filename: filename.into(),
             reader: BuilderFileReader::Bytes(bytes),
@@ -141,14 +173,14 @@ impl<'a> GMABuilder<'a> {
     }
 
     /// Adds a file with the given filename and contents are read from `reader`
-    pub fn file_from_reader<S: Into<String>>(
-        mut self,
+    pub fn file_from_reader<S: Into<String>, R: Read + 'static>(
+        &mut self,
         filename: S,
-        reader: &'a mut dyn Read,
-    ) -> Self {
+        reader: R,
+    ) -> &mut Self {
         self.files.push(BuilderFile {
             filename: filename.into(),
-            reader: BuilderFileReader::Reader(reader),
+            reader: BuilderFileReader::Reader(Box::new(reader)),
         });
         self
     }
@@ -158,7 +190,7 @@ impl<'a> GMABuilder<'a> {
     where
         WriterType: Write + Seek,
     {
-        match self.compression {
+        match self.compression.unwrap() {
             true => {
                 let buffer = Vec::with_capacity(1024 * 1024 * 32);
                 let mut bufwriter = Cursor::new(buffer);
@@ -172,18 +204,22 @@ impl<'a> GMABuilder<'a> {
     }
 
     fn write_to_gen<WriterType: Write + Seek>(self, mut writer: WriterType) -> Result<()> {
+        let name = self
+            .name
+            .expect("You need to provided a name for the addon file");
+
         Self::write_ident(&mut writer)?;
         //write version
-        writer.write_u8(self.version)?;
+        writer.write_u8(self.version.unwrap())?;
         //write steamid
-        writer.write_u64(self.steamid)?;
+        writer.write_u64(self.steamid.unwrap())?;
         //write timestamp
-        writer.write_u64(self.timestamp)?;
+        writer.write_u64(self.timestamp.unwrap())?;
         //write required contents
         //this is unused right now so just write an empty string
         writer.write_u8(0)?;
         //write addon name
-        writer.write_c_string(self.name)?;
+        writer.write_c_string(&name)?;
         //write metadata string
         let tags: Vec<AddonTag> = self
             .addon_tags
@@ -192,15 +228,15 @@ impl<'a> GMABuilder<'a> {
             .map(|p| p.unwrap())
             .collect();
         let metadata = AddonMetadata::new(
-            self.name.to_owned(),
-            self.description.to_owned(),
+            name.to_owned(),
+            self.description.unwrap().to_owned(),
             &self.addon_type,
             &tags,
         );
         let metadata_json = metadata.to_json();
         writer.write_c_string(&metadata_json)?;
         //write author name
-        writer.write_c_string(self.author)?;
+        writer.write_c_string(self.author.unwrap())?;
         //write addon_version
         //this is currently unused and should be set to 1
         writer.write_u32(1)?;
@@ -282,12 +318,9 @@ impl<'a> GMABuilder<'a> {
             }
         };
         match bfile.reader {
-            BuilderFileReader::FSFile(file) => {
-                let mut reader = BufReader::new(file);
-                write_contents(&mut reader)
-            }
+            BuilderFileReader::FSFile(mut reader) => write_contents(&mut reader),
             BuilderFileReader::Bytes(mut bytes) => write_contents(&mut bytes),
-            BuilderFileReader::Reader(reader) => write_contents(reader),
+            BuilderFileReader::Reader(mut reader) => write_contents(&mut reader),
         }
     }
 

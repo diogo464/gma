@@ -15,7 +15,9 @@ fn main() {
     let file = File::create("myaddon.gma").unwrap();
     let mut writer = BufWriter::new(file);
 
-    GMABuilder::new()
+    let mut builder = GMABuilder::new();
+
+    builder
         .version(VERSION)
         .steamid(STEAMID)
         .timestamp(TIMESTAMP)
@@ -26,7 +28,7 @@ fn main() {
         .addon_tag(TAG2)
         .author(AUTHOR)
         .file_from_bytes("file1", b"hello")
-        .compression(true)
-        .write_to(&mut writer)
-        .unwrap();
+        .compression(true);
+
+    builder.write_to(&mut writer).unwrap();
 }

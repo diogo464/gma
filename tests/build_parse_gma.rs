@@ -19,7 +19,9 @@ mod test {
 
         let mut buffer: Vec<u8> = Vec::new();
 
-        GMABuilder::new()
+        let mut builder = GMABuilder::new();
+
+        builder
             .version(VERSION)
             .steamid(STEAMID)
             .timestamp(TIMESTAMP)
@@ -30,9 +32,9 @@ mod test {
             .addon_tag(TAG2)
             .author(AUTHOR)
             .compression(true)
-            .file_from_bytes(ENTRY_NAME, ENTRY_DATA)
-            .write_to(Cursor::new(&mut buffer))
-            .unwrap();
+            .file_from_bytes(ENTRY_NAME, ENTRY_DATA);
+
+        builder.write_to(Cursor::new(&mut buffer)).unwrap();
 
         let archive = gma::load_from_memory(&buffer).unwrap();
         assert_eq!(archive.version(), VERSION);
