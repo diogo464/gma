@@ -8,7 +8,7 @@ fn main() {
     println!("Name : {}", archive.name());
     println!("Description : {}", archive.description());
     println!("Addon Type : {:?}", archive.addon_type());
-    println!("Addon Type : {:?}", archive.addon_tags());
+    println!("Addon Tags : {:?}", archive.addon_tags());
     println!("Author name : {}", archive.author());
     println!("Compressed : {}", archive.compressed());
     println!();
