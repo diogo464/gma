@@ -1,10 +1,9 @@
 use crate::binary::BinaryWriter;
 use crate::{addon_metadata::AddonMetadata, result::Result, AddonTag, AddonType, Error, IDENT};
-use crc::crc32;
+use crc::Crc;
 use std::io::{BufReader, Cursor, Read, Seek, SeekFrom, Write};
 use std::{
     fs::File,
-    hash::Hasher,
     path::Path,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
@@ -293,7 +292,8 @@ impl<'a> GMABuilder<'a> {
             const BLOCK_SIZE: usize = 8096;
             let mut bytes_written: usize = 0;
             let mut buffer: [u8; BLOCK_SIZE] = [0; BLOCK_SIZE];
-            let mut digest = crc32::Digest::new(crc32::IEEE);
+            let crc = Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
+            let mut digest = crc.digest();
             loop {
                 let read_result = reader.read(&mut buffer);
                 match read_result {
@@ -302,13 +302,13 @@ impl<'a> GMABuilder<'a> {
                             bytes_written,
                             FilePatchInfo {
                                 filesize: bytes_written as u64,
-                                crc: digest.finish() as u32,
+                                crc: digest.finalize() as u32,
                             },
                         ));
                     }
                     Ok(n) => {
                         let data_slice = &buffer[0..n];
-                        digest.write(data_slice);
+                        digest.update(data_slice);
                         writer.write_all(data_slice)?;
                         bytes_written += n;
                     }
