@@ -1,16 +1,16 @@
 [package]
 name = "gma"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["diogo <diogo464@protonmail.com>"]
 edition = "2018"
 license = "MIT"
 description = "read and write .gma files, the format used by garry's mods addons"
 repository = "https://github.com/diogo464/gma"
-readme="README.md"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-nanoserde = "0.1.18"
-crc = "1.8.1"
-lzma-rs = "0.1.3"
+nanoserde = "0.1.29"
+crc = "2.1.0"
+lzma-rs = "0.2.0"
