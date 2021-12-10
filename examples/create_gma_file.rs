@@ -27,7 +27,7 @@ fn main() {
         .addon_tag(TAG1)
         .addon_tag(TAG2)
         .author(AUTHOR)
-        .file_from_bytes("file1", b"hello")
+        .file_from_bytes("file1", b"hello".to_vec())
         .compression(true);
 
     builder.write_to(&mut writer).unwrap();
