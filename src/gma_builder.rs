@@ -15,15 +15,15 @@ const DEFAULT_DESCRIPTION: &str = "";
 const DEFAULT_AUTHOR: &str = "unknown";
 const DEFAULT_COMPRESSION: bool = false;
 
-enum BuilderFileReader<'a> {
+enum BuilderFileReader {
     FSFile(BufReader<File>),
-    Bytes(&'a [u8]),
+    Bytes(Vec<u8>),
     Reader(Box<dyn Read>),
 }
 
-struct BuilderFile<'a> {
+struct BuilderFile {
     filename: String,
-    reader: BuilderFileReader<'a>,
+    reader: BuilderFileReader,
 }
 
 struct FilePatchInfo {
@@ -34,20 +34,20 @@ struct FilePatchInfo {
 /// GMA File Builder.
 ///
 /// The only required fields are 'name' and 'addon_tag'
-pub struct GMABuilder<'a> {
+pub struct GMABuilder {
     version: Option<u8>,
     steamid: Option<u64>,
     timestamp: Option<u64>,
     name: Option<String>,
     description: Option<String>,
     author: Option<String>,
-    files: Vec<BuilderFile<'a>>,
+    files: Vec<BuilderFile>,
     addon_type: AddonType,
     addon_tags: [Option<AddonTag>; 2],
     compression: Option<bool>,
 }
 
-impl<'a> GMABuilder<'a> {
+impl GMABuilder {
     /// Creates a new gma builder
     pub fn new() -> Self {
         let current_timestamp = SystemTime::now()
@@ -163,7 +163,7 @@ impl<'a> GMABuilder<'a> {
     }
 
     /// Adds a file with the given filename and contents
-    pub fn file_from_bytes<S: Into<String>>(&mut self, filename: S, bytes: &'a [u8]) -> &mut Self {
+    pub fn file_from_bytes<S: Into<String>>(&mut self, filename: S, bytes: Vec<u8>) -> &mut Self {
         self.files.push(BuilderFile {
             filename: filename.into(),
             reader: BuilderFileReader::Bytes(bytes),
@@ -319,7 +319,7 @@ impl<'a> GMABuilder<'a> {
         };
         match bfile.reader {
             BuilderFileReader::FSFile(mut reader) => write_contents(&mut reader),
-            BuilderFileReader::Bytes(mut bytes) => write_contents(&mut bytes),
+            BuilderFileReader::Bytes(bytes) => write_contents(&mut bytes.as_slice()),
             BuilderFileReader::Reader(mut reader) => write_contents(&mut reader),
         }
     }
