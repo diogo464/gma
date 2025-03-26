@@ -11,6 +11,6 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-nanoserde = "0.1.29"
+nanoserde = "0.2.1"
 crc = "3.0.0"
 lzma-rs = "0.3.0"
